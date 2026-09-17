@@ -235,17 +235,6 @@ export default function MovieModal({ movie, onClose }) {
           </div>
         </div>
 
-        {/* Modal Footer with Bottom Close Button [ ❌ Close ] */}
-        <div className="p-4 sm:p-5 border-t border-slate-800/80 bg-dark-900/90 flex justify-end items-center gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-sm font-semibold border border-slate-700/60 transition-all hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <span className="text-rose-500 font-bold">✕</span>
-            <span>Close</span>
-          </button>
-        </div>
       </div>
     </div>
   );
