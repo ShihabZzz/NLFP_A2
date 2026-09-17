@@ -4,13 +4,20 @@ import Badge from '../common/Badge';
 
 export default function MovieModal({ movie, onClose }) {
   const modalRef = useRef(null);
+  const backdropRef = useRef(null);
   const [backdropLoading, setBackdropLoading] = useState(true);
   const [backdropError, setBackdropError] = useState(false);
 
+  const backdropImage = movie?.image?.original || movie?.image?.medium;
+
   useEffect(() => {
-    setBackdropLoading(true);
+    if (backdropRef.current?.complete && backdropRef.current?.naturalWidth > 0) {
+      setBackdropLoading(false);
+    } else {
+      setBackdropLoading(true);
+    }
     setBackdropError(false);
-  }, [movie?.id]);
+  }, [movie?.id, backdropImage]);
 
   // Close on Escape key press and manage body scroll locking
   useEffect(() => {
@@ -37,8 +44,6 @@ export default function MovieModal({ movie, onClose }) {
   }, [movie, onClose]);
 
   if (!movie) return null;
-
-  const backdropImage = movie.image?.original || movie.image?.medium;
 
   // Split summary paragraphs for structured reading
   const summaryParagraphs = movie.summary
@@ -81,6 +86,7 @@ export default function MovieModal({ movie, onClose }) {
                   </div>
                 )}
                 <img
+                  ref={backdropRef}
                   src={backdropImage}
                   alt={movie.title}
                   onLoad={() => setBackdropLoading(false)}

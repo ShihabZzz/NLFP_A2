@@ -1,17 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Calendar, Film, Info, Loader2, Star } from 'lucide-react';
 import StarRating from '../common/StarRating';
 
 export default function MovieCard({ movie, onSelect }) {
+  const imgRef = useRef(null);
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
 
   const posterSrc = !imageError && (movie.image?.original || movie.image?.medium);
 
   useEffect(() => {
-    setImageLoading(true);
+    if (imgRef.current?.complete && imgRef.current?.naturalWidth > 0) {
+      setImageLoading(false);
+    } else {
+      setImageLoading(true);
+    }
     setImageError(false);
-  }, [movie.id, movie.image?.original, movie.image?.medium]);
+  }, [movie.id, posterSrc]);
 
   return (
     <div
@@ -37,6 +42,7 @@ export default function MovieCard({ movie, onSelect }) {
               </div>
             )}
             <img
+              ref={imgRef}
               src={posterSrc}
               alt={movie.title}
               onLoad={() => setImageLoading(false)}
