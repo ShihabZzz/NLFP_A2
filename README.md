@@ -2,63 +2,33 @@
 
 A responsive, high-performance **Movie & TV Explorer Web Application** built with **React**, **Vite**, and **Tailwind CSS**, powered by the free [TVMaze API](https://www.tvmaze.com/api).
 
-Browse thousands of movies and television series across a multi-page catalog, search titles dynamically with debounced queries, filter by genre, and inspect comprehensive movie details in an interactive modal overlay.
-
 ---
 
 ## 🌐 Live Link
 
-- **Live Application:** [Clouflare Page](https://movie-exp.pages.dev/)
+- [Clouflare Page](https://movie-exp.pages.dev/)
 
 ---
 
 ## ✨ Key Features
 
 ### 1. 🏠 Home Page
-- **Cinematic Hero Banner**: Atmospheric dark theme with radial glow effects, prominent heading (`DISCOVER MOVIES`), engaging copy, and quick CTA buttons.
-- **Featured Shows Section**: Dynamically showcases top-rated series fetched from the TVMaze catalog with rating-based ranking.
-- **Responsive Top Navbar**: Sticky glassmorphic navbar with brand logo and an animated rotating conic-gradient border button directing to `/movies`.
-- **Clean Footer**: Brand branding, copyright notice, TVMaze API attribution, and direct GitHub repository link.
+- Cinematic Hero Banner
+- Featured Shows Section
 
 ### 2. 🔍 Movie Listing & Dynamic Search
-- **Instant Debounced Search**: Live search input with 400ms debounce to prevent API spamming, plus instant Enter / submit action.
-- **Clear Search Action**: Fast reset button (`✕`) to return to the full movie catalog.
-- **Genre Filter Chips**: Rapid filtering across popular genres (*Drama*, *Action*, *Comedy*, *Science-Fiction*, *Thriller*, *Crime*, *Romance*, *Horror*, *Adventure*).
-- **Responsive CSS Grid**: 
-  - Mobile: 1 column
-  - Tablet: 2 columns
-  - Desktop: 3–4 columns
-- **Multi-Page Catalog Pagination**:
-  - Expanded beyond page 0 to access over 80,000+ shows across the entire TVMaze catalog (Pages 1 to 375+).
-  - **Dual Navigation Controls**: Compact page switcher in the results sub-header and a full pagination bar at the bottom.
-  - **Comprehensive Controls**: First Page (`«`), Previous (`‹`), sliding numbered page buttons (`1`, `2`, `3` ... `375`), Next (`›`), and Last Page (`»`).
-  - **Direct Page Jump**: Form input allowing users to jump directly to any page number.
-  - **URL Query Synchronization**: URL reflects `?page=:num` for deep linking, bookmarking, and native browser history navigation.
-  - **Smooth Scroll**: Automatically scrolls to the top of the grid when changing pages.
-- **Graceful UI States**:
-  - Centered animated spinner (`Loader2`) overlay on movie card covers until images finish loading properly.
-  - Animated pulsing skeleton placeholders during catalog and search data fetching.
-  - Informative empty / "No movies found" state with quick reset and return actions.
-  - Network error fallback banner with a "Try Again" retry action.
-
-### 3. 🎞️ Movie Details Modal
-- **High-Res Backdrop & Poster**: Large visual preview with smooth gradient vignette overlays.
-- **Rich Metadata Strip**: Star rating (`⭐ 8.5 / 10`), release year / premiere date (`📅 2024`), runtime, language, network, and status badge.
-- **Sanitized Overview**: Safely cleans HTML tags returned by TVMaze API to prevent XSS and presents formatted, readable paragraphs.
-- **Official Links**: External link button to the title's official website when available.
-- **Multi-Modal Accessibility & Closing**:
-  - Top-right close button (`✕`).
-  - Bottom action button (`Close`).
-  - Overlay backdrop click.
-  - `Escape` keyboard shortcut.
-  - Background body scroll locking while the modal is open.
+- Instant Debounced Search
+- Clear Search Action
+- Genre Filter Chips
+- Multi-Page Catalog Pagination
+- Movie Details Modal
 
 ---
 
 ## 🛠️ Technology Stack
 
 | Technology | Version |
-|---|---|---|
+|---|---|
 | **React** | 19.3 |
 | **Vite** | 8.3 |
 | **Tailwind CSS** | 4.3 |
