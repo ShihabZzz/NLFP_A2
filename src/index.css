@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #fff1f2;
+  --color-brand-100: #ffe4e6;
+  --color-brand-500: #e11d48;
+  --color-brand-600: #be123c;
+  --color-brand-700: #9f1239;
+
+  --color-dark-900: #0b0f19;
+  --color-dark-800: #111827;
+  --color-dark-700: #1f2937;
+  --color-dark-600: #374151;
+
+  --animate-fade-in: fadeIn 0.2s ease-in-out;
+  --animate-border-spin: borderSpin 3s linear infinite;
+
+  @keyframes fadeIn {
+    0% { opacity: 0; transform: scale(0.98); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes borderSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+}
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  }
+}
+
+/* Animated border beam only activates when genuinely hovered on hover-supported devices */
+@media (hover: hover) and (pointer: fine) {
+  .movie-btn-group:hover .movie-btn-beam {
+    opacity: 1;
+  }
+  .movie-btn-group:hover .movie-btn-border {
+    border-color: transparent;
+  }
+  .movie-btn-group:hover .movie-btn-icon {
+    transform: rotate(12deg);
+  }
+  .movie-btn-group:hover {
+    transform: scale(1.03);
+  }
+}
+
+/* Touch devices or mobile view: disable hover beam so tapping/clicking never triggers persistent animation */
+@media (hover: none), (pointer: coarse), (max-width: 640px) {
+  .movie-btn-beam {
+    display: none !important;
+    opacity: 0 !important;
+    animation: none !important;
+  }
+}
+
+/* Custom scrollbar for modal & page */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
