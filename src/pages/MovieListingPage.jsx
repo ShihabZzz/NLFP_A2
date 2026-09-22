@@ -170,6 +170,9 @@ export default function MovieListingPage() {
   // page so "last page" and the next button stop pointing past the catalog.
   const effectiveTotalPages = reachedEnd ? currentPage : TOTAL_CATALOG_PAGES;
 
+  const handleSelectMovie = useCallback((movie) => setSelectedMovie(movie), []);
+  const handleCloseModal = useCallback(() => setSelectedMovie(null), []);
+
   return (
     <div className="min-h-screen max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 relative">
       {/* Page Header and Search Section */}
@@ -351,7 +354,7 @@ export default function MovieListingPage() {
       ) : (
         <MovieGrid
           movies={filteredMovies}
-          onSelect={(movie) => setSelectedMovie(movie)}
+          onSelect={handleSelectMovie}
         />
       )}
 
@@ -372,7 +375,7 @@ export default function MovieListingPage() {
       {selectedMovie && (
         <MovieModal
           movie={selectedMovie}
-          onClose={() => setSelectedMovie(null)}
+          onClose={handleCloseModal}
         />
       )}
     </div>

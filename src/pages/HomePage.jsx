@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AlertCircle, ArrowRight, Compass, Flame, RefreshCw, Sparkles, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import MovieGrid from '../components/movies/MovieGrid';
@@ -13,6 +13,9 @@ export default function HomePage() {
   const [selectedMovie, setSelectedMovie] = useState(null);
   // Bumped to refetch; used by the error state's "Try Again" button.
   const [reloadKey, setReloadKey] = useState(0);
+
+  const handleSelectMovie = useCallback((movie) => setSelectedMovie(movie), []);
+  const handleCloseModal = useCallback(() => setSelectedMovie(null), []);
 
   useEffect(() => {
     let isMounted = true;
@@ -166,7 +169,7 @@ export default function HomePage() {
             </button>
           </div>
         ) : (
-          <MovieGrid movies={featuredMovies} onSelect={(movie) => setSelectedMovie(movie)} />
+          <MovieGrid movies={featuredMovies} onSelect={handleSelectMovie} />
         )}
       </section>
 
@@ -174,7 +177,7 @@ export default function HomePage() {
       {selectedMovie && (
         <MovieModal
           movie={selectedMovie}
-          onClose={() => setSelectedMovie(null)}
+          onClose={handleCloseModal}
         />
       )}
     </div>

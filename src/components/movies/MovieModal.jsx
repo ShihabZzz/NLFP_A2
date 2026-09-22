@@ -12,6 +12,15 @@ export default function MovieModal({ movie, onClose }) {
   const backdropImage = movie?.image?.original || movie?.image?.medium;
   const displayRating = formatRating(movie?.rating);
 
+  // Keep the latest onClose in a ref. Parents pass inline arrows whose
+  // identity changes each render; using onClose directly as an effect dep
+  // would tear down and re-add the key listener and body scroll lock on
+  // every unrelated parent re-render while the modal is open.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   useEffect(() => {
     if (backdropRef.current?.complete && backdropRef.current?.naturalWidth > 0) {
       setBackdropLoading(false);
@@ -21,13 +30,15 @@ export default function MovieModal({ movie, onClose }) {
     setBackdropError(false);
   }, [movie?.id, backdropImage]);
 
-  // Close on Escape key press and manage body scroll locking
+  // Close on Escape key press and manage body scroll locking.
+  // Deps are the modal identity only: onClose is read from its ref so a
+  // re-rendered parent can't churn the listener and scroll lock.
   useEffect(() => {
     if (!movie) return;
 
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current?.();
       }
     };
 
@@ -43,7 +54,7 @@ export default function MovieModal({ movie, onClose }) {
       document.body.style.overflow = originalOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [movie, onClose]);
+  }, [movie]);
 
   if (!movie) return null;
 
