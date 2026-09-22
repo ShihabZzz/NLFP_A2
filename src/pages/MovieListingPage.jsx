@@ -13,7 +13,7 @@ import MovieGrid from '../components/movies/MovieGrid';
 import MovieModal from '../components/movies/MovieModal';
 import MovieSkeletonGrid from '../components/movies/MovieSkeleton';
 import SearchBar from '../components/movies/SearchBar';
-import { fetchShows, isAbortError, searchShows, SHOWS_PER_PAGE, TOTAL_CATALOG_PAGES } from '../services/tvmaze';
+import { fetchShows, isAbortError, searchShows, TOTAL_CATALOG_PAGES } from '../services/tvmaze';
 
 const POPULAR_GENRES = [
   'All',
@@ -96,8 +96,9 @@ export default function MovieListingPage() {
         // TVMaze pages are 0-indexed (Page 1 in UI = API page 0)
         const apiPage = Math.max(0, pageNum - 1);
         results = await fetchShows(apiPage, { signal: controller.signal });
-        // A short or empty page means there is no next page.
-        atEnd = results.length < SHOWS_PER_PAGE;
+        // Only an empty page (HTTP 404 -> []) means the catalog ended.
+        // Page sizes vary (~240) so "short page" is NOT a valid signal.
+        atEnd = results.length === 0;
       }
       // A newer request superseded this one; discard the stale response.
       if (requestId !== requestIdRef.current) return;
@@ -165,9 +166,10 @@ export default function MovieListingPage() {
     );
   }, [movies, selectedGenre]);
 
-  // Pagination bounds: TOTAL_CATALOG_PAGES is only an upper-bound guess.
-  // Once a short/empty page proves we've hit the end, clamp to the current
-  // page so "last page" and the next button stop pointing past the catalog.
+  // Pagination bounds: TOTAL_CATALOG_PAGES is only an upper-bound estimate
+  // for drawing the page buttons. Once an empty page proves we've hit the
+  // real end, clamp to the current page so "last page" and the next button
+  // stop pointing past the catalog.
   const effectiveTotalPages = reachedEnd ? currentPage : TOTAL_CATALOG_PAGES;
 
   const handleSelectMovie = useCallback((movie) => setSelectedMovie(movie), []);

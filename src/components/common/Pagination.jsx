@@ -77,7 +77,10 @@ export default function Pagination({
 
   const pageNumbers = getPageNumbers();
   const canGoPrevious = currentPage > 1 && !disabled;
-  const canGoNext = hasNextPage && (!total || currentPage < total) && !disabled;
+  // hasNextPage is authoritative (the caller detects the real end of the
+  // catalog); `total` is only an estimate used for the numbered buttons, so
+  // it must not gate Next or we'd disable it once the estimate is reached.
+  const canGoNext = hasNextPage && !disabled;
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-8 border-t border-slate-800/80">

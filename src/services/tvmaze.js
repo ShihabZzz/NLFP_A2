@@ -1,17 +1,16 @@
 const BASE_URL = 'https://api.tvmaze.com';
 
 /**
- * Number of shows TVMaze returns per catalog page.
- * The last page (or a page past the end, which answers 404) returns fewer.
+ * Upper-bound estimate of catalog pages, used only to render the numbered
+ * page buttons and the "of N" label before the real end is known.
+ *
+ * TVMaze does not report a total, and its page count drifts as shows are
+ * added/removed, so this must NOT be treated as authoritative: the real end
+ * of the catalog is detected at runtime when a page answers HTTP 404
+ * (mapped to an empty array by fetchShows). This estimate is deliberately
+ * generous so Next is never disabled prematurely.
  */
-export const SHOWS_PER_PAGE = 250;
-
-/**
- * Upper bound of catalog pages: TVMaze exposes ~80k+ shows at 250 per page.
- * Used as an initial guess for pagination; the real end of the catalog is
- * detected at runtime from a short/empty page.
- */
-export const TOTAL_CATALOG_PAGES = 375;
+export const TOTAL_CATALOG_PAGES = 500;
 
 /**
  * Decodes HTML character references (&amp;, &#39;, &#x2019;, ...) in a string.
@@ -136,6 +135,8 @@ export async function fetchShows(page = 0, { signal } = {}) {
   try {
     const res = await fetch(`${BASE_URL}/shows?page=${page}`, { signal });
     if (res.status === 404) {
+      // Past the end of the catalog: TVMaze answers 404 for out-of-range
+      // pages. An empty array is the reliable "no more pages" signal.
       return [];
     }
     if (!res.ok) {
