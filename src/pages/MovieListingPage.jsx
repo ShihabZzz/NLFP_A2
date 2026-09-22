@@ -338,23 +338,23 @@ export default function MovieListingPage() {
           </div>
         </div>
       ) : (
-        <>
-          <MovieGrid
-            movies={filteredMovies}
-            onSelect={(movie) => setSelectedMovie(movie)}
-          />
+        <MovieGrid
+          movies={filteredMovies}
+          onSelect={(movie) => setSelectedMovie(movie)}
+        />
+      )}
 
-          {/* Bottom Pagination Bar (active in catalog browse mode) */}
-          {!query && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={TOTAL_CATALOG_PAGES}
-              hasNextPage={movies.length > 0}
-              disabled={loading}
-              onPageChange={handlePageChange}
-            />
-          )}
-        </>
+      {/* Bottom Pagination Bar (active in catalog browse mode).
+          Rendered outside the empty/error branches so an empty page never
+          strands the user — they can always navigate to another page. */}
+      {!query && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={TOTAL_CATALOG_PAGES}
+          hasNextPage={movies.length > 0}
+          disabled={loading}
+          onPageChange={handlePageChange}
+        />
       )}
 
       {/* Movie Details Modal */}
