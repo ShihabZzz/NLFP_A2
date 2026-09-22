@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Calendar, Film, Info, Loader2, Star } from 'lucide-react';
 import StarRating from '../common/StarRating';
+import { formatRating } from '../../services/tvmaze';
 
 export default function MovieCard({ movie, onSelect }) {
   const imgRef = useRef(null);
@@ -67,7 +68,7 @@ export default function MovieCard({ movie, onSelect }) {
         <div className="absolute top-3 right-3 z-20 bg-slate-900/85 backdrop-blur-md px-2.5 py-1 rounded-full border border-slate-700/60 shadow-lg flex items-center gap-1">
           <Star size={13} className={movie.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-500'} />
           <span className="text-xs font-bold text-white">
-            {movie.rating ? movie.rating : 'NR'}
+            {formatRating(movie.rating) || 'NR'}
           </span>
         </div>
 
@@ -98,7 +99,7 @@ export default function MovieCard({ movie, onSelect }) {
             <span className="text-slate-600">•</span>
             <span className="inline-flex items-center gap-1 text-slate-300">
               <Calendar size={13} className="text-slate-400" />
-              <span>{movie.year}</span>
+              <span>{movie.year || 'TBA'}</span>
             </span>
             {movie.language && (
               <>

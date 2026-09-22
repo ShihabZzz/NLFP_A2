@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Calendar, Clock, ExternalLink, Film, Globe, Loader2, Star, Tv, X } from 'lucide-react';
 import Badge from '../common/Badge';
+import { formatRating } from '../../services/tvmaze';
 
 export default function MovieModal({ movie, onClose }) {
   const modalRef = useRef(null);
@@ -9,6 +10,7 @@ export default function MovieModal({ movie, onClose }) {
   const [backdropError, setBackdropError] = useState(false);
 
   const backdropImage = movie?.image?.original || movie?.image?.medium;
+  const displayRating = formatRating(movie?.rating);
 
   useEffect(() => {
     if (backdropRef.current?.complete && backdropRef.current?.naturalWidth > 0) {
@@ -131,10 +133,10 @@ export default function MovieModal({ movie, onClose }) {
 
             {/* Quick floating badges over backdrop */}
             <div className="absolute bottom-4 left-4 right-4 sm:left-6 sm:right-6 z-20 flex flex-wrap items-center gap-2">
-              {movie.rating && (
+              {displayRating && (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/90 backdrop-blur-md border border-slate-700/70 text-amber-400 text-xs sm:text-sm font-bold shadow-md">
                   <Star size={15} className="fill-amber-400 text-amber-400" />
-                  <span>{movie.rating} / 10</span>
+                  <span>{displayRating} / 10</span>
                 </div>
               )}
 
@@ -167,11 +169,11 @@ export default function MovieModal({ movie, onClose }) {
               {/* Sub-headline / metadata strip matching wireframe */}
               <div className="flex flex-wrap items-center gap-y-2 gap-x-4 mt-2 text-sm text-slate-400">
                 <span className="inline-flex items-center gap-1 text-amber-400 font-semibold">
-                  ⭐ Rating: {movie.rating ? movie.rating : 'Not Rated'}
+                  ⭐ Rating: {displayRating || 'Not Rated'}
                 </span>
                 <span className="text-slate-600">|</span>
                 <span className="inline-flex items-center gap-1 text-slate-300">
-                  📅 Release: {movie.premiered || movie.year}
+                  📅 Release: {movie.premiered || movie.year || 'TBA'}
                 </span>
                 {movie.runtime && (
                   <>
@@ -217,15 +219,21 @@ export default function MovieModal({ movie, onClose }) {
             <div className="bg-dark-900/70 border border-slate-800 rounded-2xl p-4 grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs sm:text-sm">
               <div>
                 <span className="text-slate-400 block text-xs">Language</span>
-                <span className="font-semibold text-slate-200">{movie.language || 'English'}</span>
+                <span className="font-semibold text-slate-200">
+                  {movie.language || 'Not specified'}
+                </span>
               </div>
               <div>
                 <span className="text-slate-400 block text-xs">Network / Channel</span>
-                <span className="font-semibold text-slate-200">{movie.network || 'N/A'}</span>
+                <span className="font-semibold text-slate-200">
+                  {movie.network || 'Not listed'}
+                </span>
               </div>
               <div>
                 <span className="text-slate-400 block text-xs">Premiered</span>
-                <span className="font-semibold text-slate-200">{movie.premiered}</span>
+                <span className="font-semibold text-slate-200">
+                  {movie.premiered || 'Unknown'}
+                </span>
               </div>
             </div>
 

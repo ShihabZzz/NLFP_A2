@@ -61,28 +61,41 @@ export function cleanSummary(html) {
 }
 
 /**
- * Normalizes raw show data from either /shows or /search/shows endpoints
- * @param {Object} item 
+ * Formats a numeric rating for display, e.g. 8 -> "8.0", 7.65 -> "7.7".
+ * Accepts legacy string ratings defensively; returns null when unrated.
+ * @param {number|string|null|undefined} rating
+ * @returns {string|null}
+ */
+export function formatRating(rating) {
+  if (rating == null || rating === '') return null;
+  const value = Number(rating);
+  return Number.isFinite(value) ? value.toFixed(1) : null;
+}
+
+/**
+ * Normalizes raw show data from either /shows or /search/shows endpoints.
+ * Missing fields stay null rather than being replaced with display copy, so
+ * callers decide how (or whether) to present them.
+ * @param {Object} item
  * @returns {Object} Normalized show object
  */
 export function normalizeShow(item) {
   const show = item.show ? item.show : item;
-  
+
   const releaseYear = show.premiered
     ? show.premiered.split('-')[0]
     : show.ended
     ? show.ended.split('-')[0]
-    : 'TBA';
-
-  const ratingValue = show.rating?.average
-    ? Number(show.rating.average).toFixed(1)
     : null;
+
+  // Keep as a number so sorting/comparison works; format at render time.
+  const ratingValue = show.rating?.average ? Number(show.rating.average) : null;
 
   return {
     id: show.id,
     title: show.name || 'Untitled',
     year: releaseYear,
-    premiered: show.premiered || 'Unknown',
+    premiered: show.premiered || null,
     rating: ratingValue,
     genres: Array.isArray(show.genres) ? show.genres : [],
     summary: cleanSummary(show.summary),
@@ -90,10 +103,10 @@ export function normalizeShow(item) {
       medium: show.image?.medium || null,
       original: show.image?.original || show.image?.medium || null,
     },
-    language: show.language || 'English',
+    language: show.language || null,
     runtime: show.runtime || show.averageRuntime || null,
-    status: show.status || 'Unknown',
-    network: show.network?.name || show.webChannel?.name || 'N/A',
+    status: show.status || null,
+    network: show.network?.name || show.webChannel?.name || null,
     // Only a genuine official site. Falling back to show.url here would make
     // the "Official Website" and "TVMaze Profile" links identical.
     officialSite: show.officialSite || null,
