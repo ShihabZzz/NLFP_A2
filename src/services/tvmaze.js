@@ -1,6 +1,19 @@
 const BASE_URL = 'https://api.tvmaze.com';
 
 /**
+ * Number of shows TVMaze returns per catalog page.
+ * The last page (or a page past the end, which answers 404) returns fewer.
+ */
+export const SHOWS_PER_PAGE = 250;
+
+/**
+ * Upper bound of catalog pages: TVMaze exposes ~80k+ shows at 250 per page.
+ * Used as an initial guess for pagination; the real end of the catalog is
+ * detected at runtime from a short/empty page.
+ */
+export const TOTAL_CATALOG_PAGES = 375;
+
+/**
  * Decodes HTML character references (&amp;, &#39;, &#x2019;, ...) in a string.
  *
  * Tag stripping alone leaves entities intact, so summaries render literally

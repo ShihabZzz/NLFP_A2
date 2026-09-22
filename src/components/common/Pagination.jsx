@@ -6,30 +6,35 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-r
  *
  * @param {Object} props
  * @param {number} props.currentPage - Current active page (1-indexed)
- * @param {number} [props.totalPages=375] - Total available pages in TVMaze catalog
+ * @param {number} props.totalPages - Total available pages (required: callers
+ *   own this value so it can't drift from the API's real catalog size)
  * @param {boolean} [props.hasNextPage=true] - Whether next page has content
  * @param {boolean} [props.disabled=false] - Disable controls while fetching
  * @param {Function} props.onPageChange - Handler receiving new page number
  */
 export default function Pagination({
   currentPage = 1,
-  totalPages = 375,
+  totalPages,
   hasNextPage = true,
   disabled = false,
   onPageChange,
 }) {
   const [jumpInput, setJumpInput] = useState('');
 
+  // Degrade gracefully rather than crash when the caller omits a usable total:
+  // fall back to a window around the current page and hide "of N" labels.
+  const total = Number.isInteger(totalPages) && totalPages > 1 ? totalPages : null;
+
   const handlePageClick = (page) => {
     if (page === currentPage || disabled || page < 1) return;
-    if (totalPages && page > totalPages) return;
+    if (total && page > total) return;
     onPageChange(page);
   };
 
   const handleJumpSubmit = (e) => {
     e.preventDefault();
     const target = parseInt(jumpInput.trim(), 10);
-    if (!Number.isNaN(target) && target >= 1 && (!totalPages || target <= totalPages)) {
+    if (!Number.isNaN(target) && target >= 1 && (!total || target <= total)) {
       setJumpInput('');
       onPageChange(target);
     }
@@ -41,7 +46,7 @@ export default function Pagination({
     const maxVisible = 5;
 
     let start = Math.max(1, currentPage - 2);
-    let end = Math.min(totalPages, start + maxVisible - 1);
+    let end = Math.min(total ?? start + maxVisible - 1, start + maxVisible - 1);
 
     if (end - start + 1 < maxVisible) {
       start = Math.max(1, end - maxVisible + 1);
@@ -60,11 +65,11 @@ export default function Pagination({
     }
 
     // Always include last page
-    if (end < totalPages) {
-      if (end < totalPages - 1) {
+    if (total && end < total) {
+      if (end < total - 1) {
         pages.push('ellipsis-end');
       }
-      pages.push(totalPages);
+      pages.push(total);
     }
 
     return pages;
@@ -72,16 +77,16 @@ export default function Pagination({
 
   const pageNumbers = getPageNumbers();
   const canGoPrevious = currentPage > 1 && !disabled;
-  const canGoNext = hasNextPage && (!totalPages || currentPage < totalPages) && !disabled;
+  const canGoNext = hasNextPage && (!total || currentPage < total) && !disabled;
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-8 border-t border-slate-800/80">
       {/* Page Info */}
       <div className="text-xs sm:text-sm text-slate-400 order-2 sm:order-1">
         Page <span className="font-semibold text-white">{currentPage}</span>
-        {totalPages && (
+        {total && (
           <>
-            {' '}of <span className="font-semibold text-white">{totalPages}</span>
+            {' '}of <span className="font-semibold text-white">{total}</span>
           </>
         )}
       </div>
@@ -169,10 +174,10 @@ export default function Pagination({
         </button>
 
         {/* Last Page Button */}
-        {totalPages && (
+        {total && (
           <button
             type="button"
-            onClick={() => handlePageClick(totalPages)}
+            onClick={() => handlePageClick(total)}
             disabled={!canGoNext}
             className={`p-2 rounded-xl border transition-all text-xs font-semibold flex items-center justify-center ${
               canGoNext
@@ -196,7 +201,7 @@ export default function Pagination({
         <input
           type="number"
           min="1"
-          max={totalPages || undefined}
+          max={total || undefined}
           value={jumpInput}
           onChange={(e) => setJumpInput(e.target.value)}
           placeholder="Page"

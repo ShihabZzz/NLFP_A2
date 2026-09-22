@@ -13,7 +13,7 @@ import MovieGrid from '../components/movies/MovieGrid';
 import MovieModal from '../components/movies/MovieModal';
 import MovieSkeletonGrid from '../components/movies/MovieSkeleton';
 import SearchBar from '../components/movies/SearchBar';
-import { fetchShows, isAbortError, searchShows } from '../services/tvmaze';
+import { fetchShows, isAbortError, searchShows, SHOWS_PER_PAGE, TOTAL_CATALOG_PAGES } from '../services/tvmaze';
 
 const POPULAR_GENRES = [
   'All',
@@ -27,8 +27,6 @@ const POPULAR_GENRES = [
   'Horror',
   'Adventure',
 ];
-
-const TOTAL_CATALOG_PAGES = 375;
 
 // Default value per query-string param; params equal to their default are
 // omitted from the URL to keep it clean.
@@ -47,6 +45,9 @@ export default function MovieListingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedMovie, setSelectedMovie] = useState(null);
+  // True once a catalog page comes back short/empty, i.e. we hit the real end
+  // of the TVMaze catalog (a page past the end answers HTTP 404 -> []).
+  const [reachedEnd, setReachedEnd] = useState(false);
 
   /**
    * Merge a patch into the current query string. A param is removed when its
@@ -87,15 +88,20 @@ export default function MovieListingPage() {
     setError(null);
     try {
       let results;
+      let atEnd = false;
       if (searchQuery && searchQuery.trim().length > 0) {
         results = await searchShows(searchQuery, { signal: controller.signal });
+        atEnd = true; // search results are not paginated
       } else {
         // TVMaze pages are 0-indexed (Page 1 in UI = API page 0)
         const apiPage = Math.max(0, pageNum - 1);
         results = await fetchShows(apiPage, { signal: controller.signal });
+        // A short or empty page means there is no next page.
+        atEnd = results.length < SHOWS_PER_PAGE;
       }
       // A newer request superseded this one; discard the stale response.
       if (requestId !== requestIdRef.current) return;
+      setReachedEnd(atEnd);
       setMovies(results);
     } catch (err) {
       // Aborted requests are intentional, not failures.
@@ -158,6 +164,11 @@ export default function MovieListingPage() {
       (m) => Array.isArray(m.genres) && m.genres.includes(selectedGenre)
     );
   }, [movies, selectedGenre]);
+
+  // Pagination bounds: TOTAL_CATALOG_PAGES is only an upper-bound guess.
+  // Once a short/empty page proves we've hit the end, clamp to the current
+  // page so "last page" and the next button stop pointing past the catalog.
+  const effectiveTotalPages = reachedEnd ? currentPage : TOTAL_CATALOG_PAGES;
 
   return (
     <div className="min-h-screen max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 relative">
@@ -263,12 +274,12 @@ export default function MovieListingPage() {
                   <ChevronLeft size={16} />
                 </button>
                 <span className="text-slate-300 px-1 font-medium">
-                  Page <span className="text-white font-bold">{currentPage}</span> / {TOTAL_CATALOG_PAGES}
+                  Page <span className="text-white font-bold">{currentPage}</span> / {effectiveTotalPages}
                 </span>
                 <button
                   type="button"
                   onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage >= TOTAL_CATALOG_PAGES || loading}
+                  disabled={currentPage >= effectiveTotalPages || loading}
                   className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-all"
                   title="Next Page"
                   aria-label="Next Page"
@@ -350,8 +361,8 @@ export default function MovieListingPage() {
       {!query && (
         <Pagination
           currentPage={currentPage}
-          totalPages={TOTAL_CATALOG_PAGES}
-          hasNextPage={movies.length > 0}
+          totalPages={effectiveTotalPages}
+          hasNextPage={!reachedEnd}
           disabled={loading}
           onPageChange={handlePageChange}
         />
