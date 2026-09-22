@@ -1,17 +1,48 @@
 const BASE_URL = 'https://api.tvmaze.com';
 
 /**
+ * Decodes HTML character references (&amp;, &#39;, &#x2019;, ...) in a string.
+ *
+ * Tag stripping alone leaves entities intact, so summaries render literally
+ * as "A&amp;B" or "don&#39;t". We reuse the browser's HTML parser for a
+ * complete entity table rather than a hand-maintained map. A textarea's
+ * value is always plain text, so this cannot execute markup.
+ *
+ * @param {string} text
+ * @returns {string} Decoded text
+ */
+export function decodeEntities(text) {
+  if (!text) return text;
+  if (typeof document === 'undefined') {
+    // Non-browser fallback: numeric references only.
+    return text
+      .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+      .replace(/&#x([0-9a-f]+);/gi, (_, code) =>
+        String.fromCharCode(parseInt(code, 16))
+      );
+  }
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  return textarea.value;
+}
+
+/**
  * Strips HTML tags from TVMaze summary strings and trims whitespace
- * @param {string} html 
+ * @param {string} html
  * @returns {string} Plain text summary
  */
 export function cleanSummary(html) {
   if (!html) return 'No description available for this title.';
-  // Replace line breaks and paragraph closings with newlines, then strip remaining HTML tags
-  const text = html
+  // Replace line breaks and paragraph closings with newlines, then strip remaining HTML tags.
+  // Tags are removed before decoding so that a literal "&lt;b&gt;" in the source
+  // survives as the text "<b>" instead of being parsed as a tag.
+  const stripped = html
     .replace(/<\/p>/gi, '\n\n')
     .replace(/<br\s*[\/]?>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
+    .replace(/<[^>]+>/g, '');
+
+  const text = decodeEntities(stripped)
+    .replace(/\r\n?/g, '\n')
     .trim();
   return text || 'No description available for this title.';
 }
