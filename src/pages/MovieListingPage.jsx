@@ -135,7 +135,21 @@ export default function MovieListingPage() {
     updateParams({ genre, page: '1' });
   };
 
-  // Filter movies by genre if selected
+  // The TVMaze API has no server-side genre filter, so genre filtering can
+  // only operate on the currently loaded page/search results. Counts below
+  // are computed from that same set to keep the UI honest about scope.
+  const genreCounts = useMemo(() => {
+    const counts = { All: movies.length };
+    movies.forEach((movie) => {
+      if (!Array.isArray(movie.genres)) return;
+      movie.genres.forEach((genre) => {
+        counts[genre] = (counts[genre] || 0) + 1;
+      });
+    });
+    return counts;
+  }, [movies]);
+
+  // Filter the loaded page's results by genre if one is selected
   const filteredMovies = useMemo(() => {
     if (selectedGenre === 'All') {
       return movies;
@@ -166,23 +180,41 @@ export default function MovieListingPage() {
           />
         </div>
 
-        {/* Quick Genre Filter Chips */}
+        {/* Quick Genre Filter Chips (scoped to the loaded results) */}
         <div className="flex items-center justify-center gap-2 flex-wrap pt-3">
-          {POPULAR_GENRES.map((genre) => (
-            <button
-              key={genre}
-              type="button"
-              onClick={() => handleGenreChange(genre)}
-              className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
-                selectedGenre === genre
-                  ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
-                  : 'bg-slate-800/80 text-slate-400 hover:text-slate-200 hover:bg-slate-700/60 border border-slate-700/50'
-              }`}
-            >
-              {genre}
-            </button>
-          ))}
+          {POPULAR_GENRES.map((genre) => {
+            const isActive = selectedGenre === genre;
+            const count = genreCounts[genre] || 0;
+            // Chips with no matches in the loaded results are still selectable
+            // (they show an explicit empty state) but are visibly marked.
+            const isEmpty = !isActive && count === 0;
+            return (
+              <button
+                key={genre}
+                type="button"
+                onClick={() => handleGenreChange(genre)}
+                aria-pressed={isActive}
+                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                  isActive
+                    ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
+                    : `bg-slate-800/80 hover:text-slate-200 hover:bg-slate-700/60 border border-slate-700/50 ${
+                        isEmpty ? 'text-slate-600' : 'text-slate-400'
+                      }`
+                }`}
+              >
+                {genre}
+                <span className={isActive ? 'text-rose-200' : 'text-slate-600'}>
+                  {' '}
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
+        <p className="text-xs text-slate-500">
+          Genre filters apply to the {query ? 'search results' : 'titles on this page'} shown
+          below, not the entire catalog.
+        </p>
       </div>
 
       {/* Results Header Status & Quick Page Switcher */}
@@ -193,12 +225,14 @@ export default function MovieListingPage() {
           ) : query ? (
             <span>
               Search results for <span className="text-rose-400 font-semibold">"{query}"</span>{' '}
-              ({filteredMovies.length} found)
+              ({filteredMovies.length} of {movies.length} found
+              {selectedGenre !== 'All' && ` in ${selectedGenre}`})
             </span>
           ) : (
             <span>
               Catalog <span className="text-rose-400 font-semibold">Page {currentPage}</span> — Showing{' '}
-              <span className="text-white font-semibold">{filteredMovies.length}</span> titles
+              <span className="text-white font-semibold">{filteredMovies.length}</span>
+              {selectedGenre !== 'All' && ` of ${movies.length}`} titles
               {selectedGenre !== 'All' && ` in ${selectedGenre}`}
             </span>
           )}
@@ -274,9 +308,11 @@ export default function MovieListingPage() {
           <h3 className="text-xl font-bold text-white mb-2">No movies or shows found</h3>
           <p className="text-sm text-slate-400 mb-6">
             {query
-              ? `We couldn't find any titles matching "${query}". Try another search keyword.`
+              ? selectedGenre !== 'All'
+                ? `None of the ${movies.length} results for "${query}" are tagged as ${selectedGenre}. Try clearing the genre filter or searching a different keyword.`
+                : `We couldn't find any titles matching "${query}". Try another search keyword.`
               : selectedGenre !== 'All'
-              ? `No titles match the selected genre "${selectedGenre}" on Catalog Page ${currentPage}.`
+              ? `No titles on Catalog Page ${currentPage} match the genre "${selectedGenre}". Genre filters only cover this page — try another page or clear the filter.`
               : `There are no titles available on Catalog Page ${currentPage}.`}
           </p>
           <div className="flex items-center justify-center gap-3">
