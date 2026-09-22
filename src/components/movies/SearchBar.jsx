@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Loader2, Search, X } from 'lucide-react';
 
 export default function SearchBar({
@@ -10,21 +10,31 @@ export default function SearchBar({
 }) {
   const [internalValue, setInternalValue] = useState(value);
 
-  // Sync internal state if parent changes externally
+  // Hold the latest callbacks in refs. Parent components typically pass
+  // inline arrows, whose identity changes on every render; using them
+  // directly as effect deps would tear down and restart the debounce timer
+  // on unrelated re-renders (e.g. a loading flag flipping), potentially
+  // postponing the search indefinitely.
+  const onChangeRef = useRef(onChange);
+  const onClearRef = useRef(onClear);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+    onClearRef.current = onClear;
+  });
+
+  // Sync internal state if parent changes externally (clear, back nav)
   useEffect(() => {
     setInternalValue(value);
   }, [value]);
 
   // Debounce search update to parent
   useEffect(() => {
+    if (internalValue === value) return;
     const timer = setTimeout(() => {
-      if (internalValue !== value) {
-        onChange(internalValue);
-      }
+      onChangeRef.current?.(internalValue);
     }, 400);
-
     return () => clearTimeout(timer);
-  }, [internalValue, value, onChange]);
+  }, [internalValue, value]);
 
   const handleInputChange = (e) => {
     setInternalValue(e.target.value);
@@ -32,16 +42,16 @@ export default function SearchBar({
 
   const handleClear = () => {
     setInternalValue('');
-    if (onClear) {
-      onClear();
+    if (onClearRef.current) {
+      onClearRef.current();
     } else {
-      onChange('');
+      onChangeRef.current?.('');
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onChange(internalValue);
+    onChangeRef.current?.(internalValue);
   };
 
   return (
