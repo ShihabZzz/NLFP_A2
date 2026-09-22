@@ -56,13 +56,26 @@ export function normalizeShow(item) {
 }
 
 /**
+ * Reports whether an error is the result of a cancelled (aborted) request.
+ * Aborts are an intentional cancellation, not a failure, so callers should
+ * skip their error handling for these.
+ * @param {unknown} error
+ * @returns {boolean}
+ */
+export function isAbortError(error) {
+  return error instanceof Error && error.name === 'AbortError';
+}
+
+/**
  * Fetches default shows catalog
- * @param {number} page 
+ * @param {number} page
+ * @param {Object} [options]
+ * @param {AbortSignal} [options.signal] - Cancels the request when aborted
  * @returns {Promise<Array>}
  */
-export async function fetchShows(page = 0) {
+export async function fetchShows(page = 0, { signal } = {}) {
   try {
-    const res = await fetch(`${BASE_URL}/shows?page=${page}`);
+    const res = await fetch(`${BASE_URL}/shows?page=${page}`, { signal });
     if (res.status === 404) {
       return [];
     }
@@ -72,6 +85,7 @@ export async function fetchShows(page = 0) {
     const data = await res.json();
     return data.map(normalizeShow);
   } catch (error) {
+    if (isAbortError(error)) throw error;
     console.error('Error fetching shows:', error);
     throw error;
   }
@@ -79,23 +93,28 @@ export async function fetchShows(page = 0) {
 
 /**
  * Searches shows by query string
- * @param {string} query 
+ * @param {string} query
+ * @param {Object} [options]
+ * @param {AbortSignal} [options.signal] - Cancels the request when aborted
  * @returns {Promise<Array>}
  */
-export async function searchShows(query) {
+export async function searchShows(query, { signal } = {}) {
   const trimmed = query.trim();
   if (!trimmed) {
     return [];
   }
 
   try {
-    const res = await fetch(`${BASE_URL}/search/shows?q=${encodeURIComponent(trimmed)}`);
+    const res = await fetch(`${BASE_URL}/search/shows?q=${encodeURIComponent(trimmed)}`, {
+      signal,
+    });
     if (!res.ok) {
       throw new Error(`Failed to search shows (HTTP ${res.status})`);
     }
     const data = await res.json();
     return data.map(normalizeShow);
   } catch (error) {
+    if (isAbortError(error)) throw error;
     console.error('Error searching shows:', error);
     throw error;
   }

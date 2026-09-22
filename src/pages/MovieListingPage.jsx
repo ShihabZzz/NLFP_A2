@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   AlertCircle,
@@ -13,7 +13,7 @@ import MovieGrid from '../components/movies/MovieGrid';
 import MovieModal from '../components/movies/MovieModal';
 import MovieSkeletonGrid from '../components/movies/MovieSkeleton';
 import SearchBar from '../components/movies/SearchBar';
-import { fetchShows, searchShows } from '../services/tvmaze';
+import { fetchShows, isAbortError, searchShows } from '../services/tvmaze';
 
 const POPULAR_GENRES = [
   'All',
@@ -42,31 +42,49 @@ export default function MovieListingPage() {
   const [error, setError] = useState(null);
   const [selectedMovie, setSelectedMovie] = useState(null);
 
+  // In-flight request tracking: the newest request wins, older ones are aborted.
+  const abortRef = useRef(null);
+  const requestIdRef = useRef(0);
+
   // Load shows catalog or search
   const loadData = useCallback(async (searchQuery, pageNum) => {
+    // Cancel any in-flight request so a slow response can't overwrite a newer one.
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const requestId = ++requestIdRef.current;
+
     setLoading(true);
     setError(null);
     try {
+      let results;
       if (searchQuery && searchQuery.trim().length > 0) {
-        const results = await searchShows(searchQuery);
-        setMovies(results);
+        results = await searchShows(searchQuery, { signal: controller.signal });
       } else {
         // TVMaze pages are 0-indexed (Page 1 in UI = API page 0)
         const apiPage = Math.max(0, pageNum - 1);
-        const results = await fetchShows(apiPage);
-        setMovies(results);
+        results = await fetchShows(apiPage, { signal: controller.signal });
       }
+      // A newer request superseded this one; discard the stale response.
+      if (requestId !== requestIdRef.current) return;
+      setMovies(results);
     } catch (err) {
+      // Aborted requests are intentional, not failures.
+      if (isAbortError(err) || requestId !== requestIdRef.current) return;
       setError(
         err.message || 'Unable to connect to the movie service. Please check your internet connection.'
       );
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
     loadData(query, currentPage);
+    // Abort the outstanding request when inputs change or the page unmounts.
+    return () => abortRef.current?.abort();
   }, [query, currentPage, loadData]);
 
   const handlePageChange = (newPage) => {
