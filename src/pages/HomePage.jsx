@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, Compass, Flame, Sparkles, TrendingUp } from 'lucide-react';
+import { AlertCircle, ArrowRight, Compass, Flame, RefreshCw, Sparkles, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import MovieGrid from '../components/movies/MovieGrid';
 import MovieModal from '../components/movies/MovieModal';
@@ -9,24 +9,39 @@ import { fetchShows } from '../services/tvmaze';
 export default function HomePage() {
   const [featuredMovies, setFeaturedMovies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedMovie, setSelectedMovie] = useState(null);
+  // Bumped to refetch; used by the error state's "Try Again" button.
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadFeatured() {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
         const data = await fetchShows(0);
-        if (isMounted) {
-          // Select top rated or first 4 shows to showcase (1 row)
-          const sorted = [...data]
-            .filter((m) => m.rating && (m.image?.original || m.image?.medium))
-            .sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
-          setFeaturedMovies(sorted.slice(0, 4));
+        if (!isMounted) return;
+        // Select top rated or first 4 shows to showcase (1 row)
+        const sorted = [...data]
+          .filter((m) => m.rating && (m.image?.original || m.image?.medium))
+          .sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        setFeaturedMovies(sorted.slice(0, 4));
+        // Surface a failure instead of leaving an empty section with no cause.
+        if (sorted.length === 0) {
+          setFeaturedMovies([]);
+          setError('No featured titles are available right now.');
         }
       } catch (err) {
+        if (!isMounted) return;
         console.error('Failed to load featured movies:', err);
+        // Clear stale results so an error is never hidden behind old data.
+        setFeaturedMovies([]);
+        setError(
+          err.message ||
+            'Unable to load featured titles. Please check your internet connection.'
+        );
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -39,7 +54,7 @@ export default function HomePage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [reloadKey]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -132,6 +147,24 @@ export default function HomePage() {
 
         {loading ? (
           <MovieSkeletonGrid count={4} />
+        ) : error ? (
+          <div className="p-8 sm:p-12 text-center bg-slate-900/60 border border-red-900/40 rounded-3xl max-w-lg mx-auto">
+            <div className="w-14 h-14 rounded-2xl bg-red-500/10 text-red-400 flex items-center justify-center mx-auto mb-4 border border-red-500/20">
+              <AlertCircle size={28} />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2">
+              Couldn't load featured shows
+            </h3>
+            <p className="text-sm text-slate-400 mb-6">{error}</p>
+            <button
+              type="button"
+              onClick={() => setReloadKey((key) => key + 1)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold shadow-md transition-colors"
+            >
+              <RefreshCw size={16} />
+              <span>Try Again</span>
+            </button>
+          </div>
         ) : (
           <MovieGrid movies={featuredMovies} onSelect={(movie) => setSelectedMovie(movie)} />
         )}
