@@ -13,7 +13,7 @@ import MovieGrid from '../components/movies/MovieGrid';
 import MovieModal from '../components/movies/MovieModal';
 import MovieSkeletonGrid from '../components/movies/MovieSkeleton';
 import SearchBar from '../components/movies/SearchBar';
-import { fetchShows, isAbortError, searchShows, TOTAL_CATALOG_PAGES } from '../services/tvmaze';
+import { fetchShows, isAbortError, searchShows } from '../services/tvmaze';
 
 const POPULAR_GENRES = [
   'All',
@@ -166,11 +166,10 @@ export default function MovieListingPage() {
     );
   }, [movies, selectedGenre]);
 
-  // Pagination bounds: TOTAL_CATALOG_PAGES is only an upper-bound estimate
-  // for drawing the page buttons. Once an empty page proves we've hit the
-  // real end, clamp to the current page so "last page" and the next button
-  // stop pointing past the catalog.
-  const effectiveTotalPages = reachedEnd ? currentPage : TOTAL_CATALOG_PAGES;
+  // Total pages is only known once we've proven it by hitting an empty page
+  // (HTTP 404). Until then TVMaze has told us nothing, so we show no total
+  // rather than print a fabricated one.
+  const knownTotalPages = reachedEnd ? currentPage : null;
 
   const handleSelectMovie = useCallback((movie) => setSelectedMovie(movie), []);
   const handleCloseModal = useCallback(() => setSelectedMovie(null), []);
@@ -279,12 +278,18 @@ export default function MovieListingPage() {
                   <ChevronLeft size={16} />
                 </button>
                 <span className="text-slate-300 px-1 font-medium">
-                  Page <span className="text-white font-bold">{currentPage}</span> / {effectiveTotalPages}
+                  Page <span className="text-white font-bold">{currentPage}</span>
+                  {knownTotalPages && (
+                    <>
+                      {' / '}
+                      <span className="text-white font-bold">{knownTotalPages}</span>
+                    </>
+                  )}
                 </span>
                 <button
                   type="button"
                   onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage >= effectiveTotalPages || loading}
+                  disabled={reachedEnd || loading}
                   className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-all"
                   title="Next Page"
                   aria-label="Next Page"
@@ -366,7 +371,7 @@ export default function MovieListingPage() {
       {!query && (
         <Pagination
           currentPage={currentPage}
-          totalPages={effectiveTotalPages}
+          totalPages={knownTotalPages}
           hasNextPage={!reachedEnd}
           disabled={loading}
           onPageChange={handlePageChange}

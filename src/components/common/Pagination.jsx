@@ -6,8 +6,10 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-r
  *
  * @param {Object} props
  * @param {number} props.currentPage - Current active page (1-indexed)
- * @param {number} props.totalPages - Total available pages (required: callers
- *   own this value so it can't drift from the API's real catalog size)
+ * @param {number|null} props.totalPages - Total pages, or null when the
+ *   caller cannot know it yet. The API reports no total, so callers pass
+ *   null until the real end has been discovered; the "of N" label, last-page
+ *   button and jump-input max are then simply omitted rather than faked.
  * @param {boolean} [props.hasNextPage=true] - Whether next page has content
  * @param {boolean} [props.disabled=false] - Disable controls while fetching
  * @param {Function} props.onPageChange - Handler receiving new page number
@@ -21,8 +23,8 @@ export default function Pagination({
 }) {
   const [jumpInput, setJumpInput] = useState('');
 
-  // Degrade gracefully rather than crash when the caller omits a usable total:
-  // fall back to a window around the current page and hide "of N" labels.
+  // Callers may not know the total (the API reports none). Fall back to a
+  // window around the current page and omit the "of N" labels.
   const total = Number.isInteger(totalPages) && totalPages > 1 ? totalPages : null;
 
   const handlePageClick = (page) => {
