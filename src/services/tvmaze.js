@@ -50,7 +50,9 @@ export function normalizeShow(item) {
     runtime: show.runtime || show.averageRuntime || null,
     status: show.status || 'Unknown',
     network: show.network?.name || show.webChannel?.name || 'N/A',
-    officialSite: show.officialSite || show.url || null,
+    // Only a genuine official site. Falling back to show.url here would make
+    // the "Official Website" and "TVMaze Profile" links identical.
+    officialSite: show.officialSite || null,
     tvmazeUrl: show.url || null,
   };
 }

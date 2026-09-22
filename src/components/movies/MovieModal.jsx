@@ -50,6 +50,26 @@ export default function MovieModal({ movie, onClose }) {
     ? movie.summary.split('\n\n').filter(Boolean)
     : ['No description available for this title.'];
 
+  // External links, deduplicated so the same target is never listed twice
+  // (e.g. a show with no official site whose fallback equals its TVMaze URL).
+  const externalLinks = [];
+  if (movie.officialSite && movie.officialSite !== movie.tvmazeUrl) {
+    externalLinks.push({
+      key: 'official',
+      href: movie.officialSite,
+      icon: <Globe size={14} className="text-rose-400" />,
+      label: 'Official Website',
+    });
+  }
+  if (movie.tvmazeUrl) {
+    externalLinks.push({
+      key: 'tvmaze',
+      href: movie.tvmazeUrl,
+      icon: <Tv size={14} className="text-blue-400" />,
+      label: 'TVMaze Profile',
+    });
+  }
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-8 bg-black/80 backdrop-blur-sm overflow-y-auto animate-fade-in"
@@ -210,32 +230,21 @@ export default function MovieModal({ movie, onClose }) {
             </div>
 
             {/* External Links */}
-            {(movie.officialSite || movie.tvmazeUrl) && (
+            {externalLinks.length > 0 && (
               <div className="flex flex-wrap items-center gap-3 pt-1">
-                {movie.officialSite && (
+                {externalLinks.map((link) => (
                   <a
-                    href={movie.officialSite}
+                    key={link.key}
+                    href={link.href}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700/60 transition-colors"
                   >
-                    <Globe size={14} className="text-rose-400" />
-                    <span>Official Website</span>
+                    {link.icon}
+                    <span>{link.label}</span>
                     <ExternalLink size={12} className="text-slate-400" />
                   </a>
-                )}
-                {movie.tvmazeUrl && (
-                  <a
-                    href={movie.tvmazeUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700/60 transition-colors"
-                  >
-                    <Tv size={14} className="text-blue-400" />
-                    <span>TVMaze Profile</span>
-                    <ExternalLink size={12} className="text-slate-400" />
-                  </a>
-                )}
+                ))}
               </div>
             )}
           </div>
