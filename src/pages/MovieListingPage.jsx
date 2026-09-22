@@ -30,17 +30,46 @@ const POPULAR_GENRES = [
 
 const TOTAL_CATALOG_PAGES = 375;
 
+// Default value per query-string param; params equal to their default are
+// omitted from the URL to keep it clean.
+const PARAM_DEFAULTS = { page: '1', genre: 'All', q: '' };
+
 export default function MovieListingPage() {
+  // All browse state (page, search query, genre) lives in the URL so it
+  // survives reload, back/forward navigation, and link sharing.
   const [searchParams, setSearchParams] = useSearchParams();
   const pageParam = parseInt(searchParams.get('page') || '1', 10);
   const currentPage = Number.isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
+  const query = searchParams.get('q') || '';
+  const selectedGenre = searchParams.get('genre') || 'All';
 
   const [movies, setMovies] = useState([]);
-  const [query, setQuery] = useState('');
-  const [selectedGenre, setSelectedGenre] = useState('All');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedMovie, setSelectedMovie] = useState(null);
+
+  /**
+   * Merge a patch into the current query string. A param is removed when its
+   * value is empty/undefined or matches its default, so URLs stay clean
+   * (no `?page=1` or `?genre=All`).
+   */
+  const updateParams = useCallback(
+    (patch) => {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        Object.entries(patch).forEach(([key, value]) => {
+          const nextValue = value == null ? '' : String(value);
+          if (nextValue === '' || nextValue === PARAM_DEFAULTS[key]) {
+            next.delete(key);
+          } else {
+            next.set(key, nextValue);
+          }
+        });
+        return next;
+      });
+    },
+    [setSearchParams]
+  );
 
   // In-flight request tracking: the newest request wins, older ones are aborted.
   const abortRef = useRef(null);
@@ -88,21 +117,22 @@ export default function MovieListingPage() {
   }, [query, currentPage, loadData]);
 
   const handlePageChange = (newPage) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('page', newPage.toString());
-      return next;
-    });
+    updateParams({ page: newPage.toString() });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSearchChange = (val) => {
-    setQuery(val);
+    // A new query always restarts from the first page of results.
+    updateParams({ q: val, page: '1' });
   };
 
   const handleClearSearch = () => {
-    setQuery('');
-    setSelectedGenre('All');
+    updateParams({ q: '', genre: 'All', page: '1' });
+  };
+
+  const handleGenreChange = (genre) => {
+    // Filtering changes the result set, so return to the first page.
+    updateParams({ genre, page: '1' });
   };
 
   // Filter movies by genre if selected
@@ -142,7 +172,7 @@ export default function MovieListingPage() {
             <button
               key={genre}
               type="button"
-              onClick={() => setSelectedGenre(genre)}
+              onClick={() => handleGenreChange(genre)}
               className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
                 selectedGenre === genre
                   ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
